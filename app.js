@@ -276,8 +276,14 @@ function reproducirSiguiente() {
 
   let htmlContenido = '';
   if (itemActual.texto) htmlContenido += `<div class="texto-reproduccion">${itemActual.texto}</div>`;
-  if (itemActual.tipo === 'image') htmlContenido += `<img src="${itemActual.url}" class="multimedia-tonazo">`;
-  if (itemActual.tipo === 'video') htmlContenido += `<video src="${itemActual.url}" class="multimedia-tonazo" autoplay muted loop></video>`;
+ if (itemActual.tipo === 'image') {
+    htmlContenido += `<img src="${itemActual.url}" class="media-reproduccion" 
+                      style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px;">`;
+}
+if (itemActual.tipo === 'video') {
+    htmlContenido += `<video src="${itemActual.url}" class="media-reproduccion" autoplay muted loop 
+                      style="max-width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px;"></video>`;
+}
 
   if (reproductorContenido) {
     reproductorContenido.innerHTML = `<div class="animar-entrada">${htmlContenido}</div>`;

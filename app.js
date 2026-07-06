@@ -260,12 +260,8 @@ function reproducirSiguiente() {
       barraProgreso.style.transition = 'none';
       barraProgreso.style.width = '0%';
     }
-    if (btnOmitir) btnOmitir.style.display = 'none';
-    return;
   }
 
-  estaReproduciendo = true;
-  if (btnOmitir) btnOmitir.style.display = 'block';
   
   const itemActual = colaReproduccion.shift();
   
@@ -311,24 +307,4 @@ function reproducirSiguiente() {
   timeoutReproduccion = setTimeout(() => {
     reproducirSiguiente();
   }, TIEMPO_REPRODUCCION_MS);
-}
-
-// ==========================================
-// 10. EVENTO BOTÓN CORTAR
-// ==========================================
-if (btnOmitir) {
-  btnOmitir.addEventListener('click', () => {
-    if (estaReproduciendo) {
-      try {
-        canalBroadcast.send({
-          type: 'broadcast',
-          event: 'admin-cortar',
-          payload: {}
-        });
-      } catch (err) {
-        console.error(err);
-      }
-      reproducirSiguiente();
-    }
-  });
 }

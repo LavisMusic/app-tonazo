@@ -45,7 +45,7 @@ canalBroadcast.subscribe();
 let archivoSeleccionado = null;
 let colaReproduccion = [];
 let estaReproduciendo = false;
-const TIEMPO_REPRODUCCION_MS = 30000; 
+const TIEMPO_REPRODUCCION_MS = 20000; 
 let timeoutReproduccion = null;
 
 const selectorArchivos = document.createElement('input');
@@ -117,7 +117,8 @@ if (btnIngresar) {
 // ==========================================
 window.addEventListener('DOMContentLoaded', (event) => {
     const btnAdjuntar = document.getElementById('btn-adjuntar');
-    const selectorArchivos = document.querySelector('input[type="file"]');
+    // Elimina la línea: const selectorArchivos = document.querySelector('input[type="file"]');
+    // Y usa la variable global 'selectorArchivos' que definiste en la sección 4
 
     if (btnAdjuntar) {
         btnAdjuntar.addEventListener('click', () => {
@@ -127,7 +128,8 @@ window.addEventListener('DOMContentLoaded', (event) => {
 
     if (selectorArchivos) {
         selectorArchivos.addEventListener('change', () => {
-            if (selectorArchivos.files.length > 0 && btnAdjuntar) {
+            if (selectorArchivos.files.length > 0) {
+                archivoSeleccionado = selectorArchivos.files[0]; // <--- ¡AQUÍ ESTÁ EL FALLO!
                 btnAdjuntar.classList.add('btn-cargado');
                 btnAdjuntar.textContent = '✅ CARGADO';
             }

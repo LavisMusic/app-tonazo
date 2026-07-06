@@ -61,45 +61,31 @@ const btnIngresar = document.getElementById('btn-ingresar');
 
 if (btnIngresar) {
     btnIngresar.addEventListener('click', async () => {
-        // 1. Obtenemos el valor del input sin complicaciones
         const usernameInput = document.getElementById('username-input');
-        const nombre = usernameInput && usernameInput.value ? usernameInput.value.trim() : 'Anonimo';
+        const nombre = (usernameInput && usernameInput.value) ? usernameInput.value.trim() : 'Anonimo';
         
-        console.log("Iniciando registro para:", nombre);
+        console.log("Intentando ingresar:", nombre);
         btnIngresar.textContent = 'Entrando...';
 
         try {
-            // 2. Insertamos en Supabase
             const { data, error } = await clienteSupabase
-                .from('users') // Asegúrate de que tu tabla se llame 'users'
+                .from('users')
                 .insert([{ username: nombre }])
                 .select();
 
             if (error) {
-                console.error("Error al registrar:", error);
-                alert("No se pudo conectar: " + error.message);
-                btnIngresar.textContent = 'Ingresar al evento';
+                console.error("Error:", error);
+                alert("Error de conexión");
             } else {
-                // 3. Éxito: Guardamos sesión y cambiamos de pantalla
                 localStorage.setItem('userId', data[0].id);
-                
-                const registro = document.getElementById('registro-pantalla');
-                const principal = document.getElementById('pantalla-principal');
-                
-                if (registro) registro.style.display = 'none';
-                if (principal) principal.style.display = 'flex';
-                
-                console.log("Ingreso exitoso");
+                document.getElementById('registro-pantalla').style.display = 'none';
+                document.getElementById('pantalla-principal').style.display = 'flex';
             }
-        } catch (err) {
-            console.error("Error inesperado:", err);
-            btnIngresar.textContent = 'Ingresar al evento';
+        } catch (e) {
+            console.error("Error fatal:", e);
         }
     });
-} else {
-    console.error("El botón 'btn-ingresar' no existe en el DOM.");
 }
-
 // ==========================================
 // 6. EVENTOS: ADJUNTAR
 // ==========================================

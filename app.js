@@ -128,25 +128,29 @@ if (btnEnviar) {
     btnEnviar.disabled = true;
 
     try {
-      // 3. Subida de archivo (si existe)
-      let urlDelArchivo = null;
-      if (typeof archivoSeleccionado !== 'undefined' && archivoSeleccionado) {
-        const nombreUnico = `${Date.now()}_${archivoSeleccionado.name}`;
-        await clienteSupabase.storage.from('multimedia-tonazo').upload(nombreUnico, archivoSeleccionado);
-        const { data: urlData } = clienteSupabase.storage.from('multimedia-tonazo').getPublicUrl(nombreUnico);
-        urlDelArchivo = urlData.publicUrl;
-      }
+  let urlDelArchivo = null;
+  let tipoDeArchivo = 'text'; // Valor por defecto
 
-      // 4. Inserción a la base de datos (Compatible con tu estructura)
-      const { error } = await clienteSupabase.from('messages').insert([{ 
-        content: textoMensaje || null, 
-        user_id: usuarioId, 
-        file_url: urlDelArchivo,
-        status: 'pendiente' 
-      }]);
+  if (archivoSeleccionado) {
+    // AQUÍ ESTÁ LA CLAVE: Detectar el tipo antes de subir
+    tipoDeArchivo = archivoSeleccionado.type.startsWith('video/') ? 'video' : 'image';
+    
+    const nombreUnico = `${Date.now()}_${archivoSeleccionado.name}`;
+    await clienteSupabase.storage.from('multimedia-tonazo').upload(nombreUnico, archivoSeleccionado);
+    const { data: urlData } = clienteSupabase.storage.from('multimedia-tonazo').getPublicUrl(nombreUnico);
+    urlDelArchivo = urlData.publicUrl;
+  }
 
-      if (error) throw error;
+  // Ahora insertamos incluyendo el tipoDeArchivo correctamente
+  const { error } = await clienteSupabase.from('messages').insert([{ 
+    content: textoMensaje || null, 
+    user_id: usuarioId, 
+    file_url: urlDelArchivo, 
+    file_type: tipoDeArchivo, // <--- Esto es lo que faltaba
+    status: 'pendiente' 
+  }]);
 
+  if (error) throw error;
       // 5. Limpieza visual (compatible con tu diseño)
       if (mensajeInput) mensajeInput.value = '';
       if (typeof archivoSeleccionado !== 'undefined') archivoSeleccionado = null;
@@ -271,8 +275,8 @@ function reproducirSiguiente() {
 
   let htmlContenido = '';
   if (itemActual.texto) htmlContenido += `<div class="texto-reproduccion">${itemActual.texto}</div>`;
-  if (itemActual.tipo === 'image') htmlContenido += `<img src="${itemActual.url}" class="media-reproduccion">`;
-  if (itemActual.tipo === 'video') htmlContenido += `<video src="${itemActual.url}" class="media-reproduccion" autoplay muted loop></video>`;
+  if (itemActual.tipo === 'image') htmlContenido += `<img src="${itemActual.url}" class="multimedia-tonazo">`;
+  if (itemActual.tipo === 'video') htmlContenido += `<video src="${itemActual.url}" class="multimedia-tonazo" autoplay muted loop></video>`;
 
   if (reproductorContenido) {
     reproductorContenido.innerHTML = `<div class="animar-entrada">${htmlContenido}</div>`;

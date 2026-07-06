@@ -60,46 +60,44 @@ document.body.appendChild(selectorArchivos);
 const btnIngresar = document.getElementById('btn-ingresar');
 
 if (btnIngresar) {
-  btnIngresar.addEventListener('click', async () => {
-    
-    // 1. Obtenemos el nombre (sin modificar nada de tu HTML)
-    const usernameInput = document.getElementById('username-input');
-    const adminPasswordInput = document.getElementById('admin-password-input');
-    
-    // Usamos el nombre ingresado o uno por defecto si está vacío
-    let nombreUsuario = (usernameInput && usernameInput.value) ? usernameInput.value.trim() : 'Invitado';
-    if (!nombreUsuario.startsWith('@')) nombreUsuario = '@' + nombreUsuario;
-
-    // 2. Intentamos el registro
-    btnIngresar.textContent = 'Ingresando...';
-
-    try {
-      // Registro en la tabla 'users'
-      const { data, error } = await clienteSupabase
-        .from('users')
-        .insert([{ username: nombreUsuario }])
-        .select();
-
-      if (error) {
-        console.error('Error al registrar:', error);
-        alert('Error de conexión');
-        btnIngresar.textContent = 'Ingresar al evento';
-      } else {
-        // 3. Éxito: Guardamos sesión y mostramos el dashboard (tal cual tenías antes)
-        localStorage.setItem('userId', data[0].id);
-        localStorage.setItem('username', data[0].username);
+    btnIngresar.addEventListener('click', async () => {
+        // 1. Obtenemos el valor del input sin complicaciones
+        const usernameInput = document.getElementById('username-input');
+        const nombre = usernameInput && usernameInput.value ? usernameInput.value.trim() : 'Anonimo';
         
-        const registroPantalla = document.getElementById('registro-pantalla');
-        const pantallaPrincipal = document.getElementById('pantalla-principal');
-        
-        if (registroPantalla) registroPantalla.style.display = 'none';
-        if (pantallaPrincipal) pantallaPrincipal.style.display = 'flex';
-      }
-    } catch (err) {
-      console.error('Error:', err);
-      btnIngresar.textContent = 'Ingresar al evento';
-    }
-  });
+        console.log("Iniciando registro para:", nombre);
+        btnIngresar.textContent = 'Entrando...';
+
+        try {
+            // 2. Insertamos en Supabase
+            const { data, error } = await clienteSupabase
+                .from('users') // Asegúrate de que tu tabla se llame 'users'
+                .insert([{ username: nombre }])
+                .select();
+
+            if (error) {
+                console.error("Error al registrar:", error);
+                alert("No se pudo conectar: " + error.message);
+                btnIngresar.textContent = 'Ingresar al evento';
+            } else {
+                // 3. Éxito: Guardamos sesión y cambiamos de pantalla
+                localStorage.setItem('userId', data[0].id);
+                
+                const registro = document.getElementById('registro-pantalla');
+                const principal = document.getElementById('pantalla-principal');
+                
+                if (registro) registro.style.display = 'none';
+                if (principal) principal.style.display = 'flex';
+                
+                console.log("Ingreso exitoso");
+            }
+        } catch (err) {
+            console.error("Error inesperado:", err);
+            btnIngresar.textContent = 'Ingresar al evento';
+        }
+    });
+} else {
+    console.error("El botón 'btn-ingresar' no existe en el DOM.");
 }
 
 // ==========================================

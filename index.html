@@ -8,34 +8,57 @@
 </head>
 <body>
 
-  <div id="registro-pantalla" class="pantalla-intro">
+<div id="registro-pantalla" class="pantalla-intro">
     <div class="caja-login">
-        <p>Ingresa tu usuario de TikTok o de Instagram 🔥</p>
-        <input type="text" id="username-input" placeholder="Tu nombre...">
-        <button id="btn-ingresar">ENTRAR A TONAZO</button>
+        <p>Coloca tu usuario y clave:</p>
+        <input type="text" id="username-input" placeholder="@admin">
+        <input type="password" id="admin-password-input" placeholder="Contraseña secreta">
+        <button id="btn-ingresar">Ingresar al evento</button>
     </div>
+</div>
+    
+    <p id="error-password" style="color: #ff1493; display: none; margin-top: 15px; font-weight: bold; text-shadow: 0 0 10px #ff1493;">❌ Clave incorrecta</p>
   </div>
 
   <div id="pantalla-principal" style="display: none;" class="pantalla-dashboard">
+    
     <div class="columna-izquierda">
       <div class="caja-envio">
         <textarea id="mensaje-input" placeholder="Escribe tu mensaje..."></textarea>
-        <button id="btn-enviar">ENVIAR MENSAJE</button>
+        <div class="botones-accion">
+          <button id="btn-adjuntar" >📎 Adjuntar</button>
+          <button id="btn-enviar">Enviar a la cola</button>
+        </div>
+      </div>
+
+      <div class="caja-playlist">
+        <h3>En cola...</h3>
+        <ul id="lista-mensajes">
+          </ul>
       </div>
     </div>
 
     <div class="columna-derecha">
       <div class="caja-reproductor">
-        <div class="header-reproductor">
-          <span id="reproductor-usuario">@nadie</span>
+        
+      <div class="header-reproductor">
+          <span class="punto-rojo"></span> EN VIVO
+          <button id="btn-omitir" class="btn-peligro" style="display: none;">🛑 Cortar</button>
+          <span id="reproductor-usuario" class="reproductor-usuario">@nadie</span>
         </div>
-        <div id="reproductor-contenido">
+
+        <div id="reproductor-contenido" class="reproductor-contenido">
           <h2 class="mensaje-vacio">Esperando el próximo mensaje...</h2>
+          </div>
+
+        <div class="barra-progreso-contenedor">
+          <div id="barra-progreso" class="barra-progreso"></div>
         </div>
+
       </div>
     </div>
-  </div>
 
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
 </body>

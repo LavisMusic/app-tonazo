@@ -57,23 +57,24 @@ document.body.appendChild(selectorArchivos);
 // ==========================================
 // 5. EVENTOS: REGISTRO
 // ==========================================
-// ==========================================
-// REGISTRO UNIFICADO Y ANÓNIMO (Sin contraseñas)
-// ==========================================
+const btnIngresar = document.getElementById('btn-ingresar');
+
 if (btnIngresar) {
   btnIngresar.addEventListener('click', async () => {
     
-    // 1. Obtenemos el nombre. Si no escriben nada, les asignamos un nombre automático.
+    // 1. Obtenemos el nombre (sin modificar nada de tu HTML)
     const usernameInput = document.getElementById('username-input');
-    let nombreUsuario = (usernameInput && usernameInput.value) ? usernameInput.value.trim() : 'Invitado_' + Math.floor(Math.random() * 1000);
+    const adminPasswordInput = document.getElementById('admin-password-input');
     
-    // Formateo visual
+    // Usamos el nombre ingresado o uno por defecto si está vacío
+    let nombreUsuario = (usernameInput && usernameInput.value) ? usernameInput.value.trim() : 'Invitado';
     if (!nombreUsuario.startsWith('@')) nombreUsuario = '@' + nombreUsuario;
-    
+
+    // 2. Intentamos el registro
     btnIngresar.textContent = 'Ingresando...';
 
-    // 2. Registro directo en Supabase
     try {
+      // Registro en la tabla 'users'
       const { data, error } = await clienteSupabase
         .from('users')
         .insert([{ username: nombreUsuario }])
@@ -81,11 +82,11 @@ if (btnIngresar) {
 
       if (error) {
         console.error('Error al registrar:', error);
-        alert('Error al conectar con la base de datos.');
-        btnIngresar.textContent = 'ENTRAR A TONAZO';
+        alert('Error de conexión');
+        btnIngresar.textContent = 'Ingresar al evento';
       } else {
-        // 3. Guardamos sesión y mostramos el dashboard
-        localStorage.setItem('userId', data[0].id); // Usamos localStorage para que no se pierda
+        // 3. Éxito: Guardamos sesión y mostramos el dashboard (tal cual tenías antes)
+        localStorage.setItem('userId', data[0].id);
         localStorage.setItem('username', data[0].username);
         
         const registroPantalla = document.getElementById('registro-pantalla');
@@ -95,11 +96,12 @@ if (btnIngresar) {
         if (pantallaPrincipal) pantallaPrincipal.style.display = 'flex';
       }
     } catch (err) {
-      console.error('Error inesperado:', err);
-      btnIngresar.textContent = 'ENTRAR A TONAZO';
+      console.error('Error:', err);
+      btnIngresar.textContent = 'Ingresar al evento';
     }
   });
 }
+
 // ==========================================
 // 6. EVENTOS: ADJUNTAR
 // ==========================================

@@ -57,45 +57,57 @@ document.body.appendChild(selectorArchivos);
 // ==========================================
 // 5. EVENTOS: REGISTRO
 // ==========================================
+const adminPasswordInput = document.getElementById('admin-password-input');
+const errorPassword = document.getElementById('error-password');
+
+// Pon tu clave secreta aquí entre las comillas
+const CLAVE_MAESTRA = "asd"; 
+
 if (btnIngresar) {
   btnIngresar.addEventListener('click', async () => {
     
-    // 1. Validamos contraseña SOLO SI el input existe en el HTML
-    const adminPasswordInput = document.getElementById('admin-password-input');
-    const errorPassword = document.getElementById('error-password');
-    const CLAVE_MAESTRA = "asd";
-
-    if (adminPasswordInput) { // Si esta página no tiene password, esto se salta
+    // 1. Verificación de seguridad (Si estamos en el panel de admin)
+    if (adminPasswordInput) {
       if (adminPasswordInput.value !== CLAVE_MAESTRA) {
-        if (errorPassword) errorPassword.style.display = 'block';
-        adminPasswordInput.value = '';
-        setTimeout(() => { if (errorPassword) errorPassword.style.display = 'none'; }, 2000);
-        return;
+        // Clave incorrecta: mostramos error y detenemos el ingreso
+        errorPassword.style.display = 'block';
+        adminPasswordInput.value = ''; // Limpiamos la caja
+        
+        // Ocultar el mensaje rojo después de 2 segundos
+        setTimeout(() => {
+          errorPassword.style.display = 'none';
+        }, 2000);
+        
+        return; // Esta línea es la que bloquea el paso
       }
     }
 
-    // 2. Registro (Si es display, busca el input; si no existe, usa un nombre por defecto)
-    const usernameInput = document.getElementById('username-input');
-    let nombreUsuario = (usernameInput && usernameInput.value) ? usernameInput.value.trim() : 'PROYECCIÓN';
+    // 2. Si la clave es correcta (o si es la pantalla de invitados que no tiene clave), seguimos
+    let nombreUsuario = usernameInput ? usernameInput.value.trim() : '';
     
-    console.log("Registrando usuario:", nombreUsuario);
+    if (nombreUsuario) {
+      if (!nombreUsuario.startsWith('@')) nombreUsuario = '@' + nombreUsuario;
+      btnIngresar.textContent = 'Ingresando...';
 
-    // 3. Ejecución en Supabase
-    btnIngresar.textContent = 'Ingresando...';
-    const { data, error } = await clienteSupabase.from('users').insert([{ username: nombreUsuario }]).select();
+      const { data, error } = await clienteSupabase.from('users').insert([{ username: nombreUsuario }]).select();
 
-    if (error) {
-        console.error("Error al registrar:", error);
-        alert("Error: " + error.message);
+      if (error) {
+        console.error('Error al registrar usuario:', error);
+        alert('Error de conexión con la base de datos.');
         btnIngresar.textContent = 'Ingresar al evento';
-    } else {
-        // Guardamos y pasamos
+      } else {
         sessionStorage.setItem('userId', data[0].id);
-        const registroPantalla = document.getElementById('registro-pantalla');
-        const pantallaPrincipal = document.getElementById('pantalla-principal');
+        sessionStorage.setItem('username', data[0].username);
         
-        if (registroPantalla) registroPantalla.style.display = 'none';
-        if (pantallaPrincipal) pantallaPrincipal.style.display = 'flex';
+        if (document.getElementById('registro-pantalla')) {
+          document.getElementById('registro-pantalla').style.display = 'none';
+        }
+        if (document.getElementById('pantalla-principal')) {
+          document.getElementById('pantalla-principal').style.display = 'flex';
+        }
+      }
+    } else {
+      alert('Por favor, ingresa un nombre de usuario.');
     }
   });
 }
@@ -105,8 +117,7 @@ if (btnIngresar) {
 // ==========================================
 window.addEventListener('DOMContentLoaded', (event) => {
     const btnAdjuntar = document.getElementById('btn-adjuntar');
-    // Elimina la línea: const selectorArchivos = document.querySelector('input[type="file"]');
-    // Y usa la variable global 'selectorArchivos' que definiste en la sección 4
+    const selectorArchivos = document.querySelector('input[type="file"]');
 
     if (btnAdjuntar) {
         btnAdjuntar.addEventListener('click', () => {
@@ -116,8 +127,7 @@ window.addEventListener('DOMContentLoaded', (event) => {
 
     if (selectorArchivos) {
         selectorArchivos.addEventListener('change', () => {
-            if (selectorArchivos.files.length > 0) {
-                archivoSeleccionado = selectorArchivos.files[0]; // <--- ¡AQUÍ ESTÁ EL FALLO!
+            if (selectorArchivos.files.length > 0 && btnAdjuntar) {
                 btnAdjuntar.classList.add('btn-cargado');
                 btnAdjuntar.textContent = '✅ CARGADO';
             }

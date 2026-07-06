@@ -87,23 +87,23 @@ if (btnIngresar) {
 // ==========================================
 // 6. EVENTOS: ADJUNTAR
 // ==========================================
-const btnAdjuntar = document.getElementById('btn-adjuntar');
-const selectorArchivos = document.querySelector('input[type="file"]');
+window.addEventListener('DOMContentLoaded', (event) => {
+    const btnAdjuntar = document.getElementById('btn-adjuntar');
+    const selectorArchivos = document.querySelector('input[type="file"]');
 
-if (btnAdjuntar) {
-    btnAdjuntar.addEventListener('click', () => {
-        selectorArchivos.click();
-    });
-}
+    if (btnAdjuntar) {
+        btnAdjuntar.addEventListener('click', () => {
+            if (selectorArchivos) selectorArchivos.click();
+        });
+    }
 
-selectorArchivos.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-        // AQUÍ ESTÁ LA CLAVE: Guardamos el archivo en la variable global
-        archivoSeleccionado = e.target.files[0]; 
-        
-        btnAdjuntar.classList.add('btn-cargado');
-        btnAdjuntar.textContent = '✅ CARGADO';
-        console.log("Archivo guardado en memoria:", archivoSeleccionado.name);
+    if (selectorArchivos) {
+        selectorArchivos.addEventListener('change', () => {
+            if (selectorArchivos.files.length > 0 && btnAdjuntar) {
+                btnAdjuntar.classList.add('btn-cargado');
+                btnAdjuntar.textContent = '✅ CARGADO';
+            }
+        });
     }
 });
 // ==========================================
@@ -119,36 +119,31 @@ if (btnEnviar) {
     const usuarioId = localStorage.getItem('userId'); 
 
     // --- SOLUCIÓN: Validar que haya ALGO que enviar ---
-    if (!textoMensaje && archivoSeleccionado === null) {
-    alert("¡Escribe algo o adjunta un archivo!");
-    return; 
-}
+    if (!textoMensaje && !archivoSeleccionado) {
+        alert("¡Escribe algo o adjunta un archivo!");
+        return; 
+    }
 
     btnEnviar.textContent = 'Enviando...';
     btnEnviar.disabled = true;
 
     try {
-  let urlDelArchivo = null;
-  let tipoDeArchivo = 'text'; // <--- ESTO FALTABA
+      // 3. Subida de archivo (si existe)
+      let urlDelArchivo = null;
+      if (typeof archivoSeleccionado !== 'undefined' && archivoSeleccionado) {
+        const nombreUnico = `${Date.now()}_${archivoSeleccionado.name}`;
+        await clienteSupabase.storage.from('multimedia-tonazo').upload(nombreUnico, archivoSeleccionado);
+        const { data: urlData } = clienteSupabase.storage.from('multimedia-tonazo').getPublicUrl(nombreUnico);
+        urlDelArchivo = urlData.publicUrl;
+      }
 
-  if (typeof archivoSeleccionado !== 'undefined' && archivoSeleccionado) {
-    // Definimos el tipo aquí antes de subir
-    tipoDeArchivo = archivoSeleccionado.type.startsWith('video/') ? 'video' : 'image';
-    
-    const nombreUnico = `${Date.now()}_${archivoSeleccionado.name}`;
-    await clienteSupabase.storage.from('multimedia-tonazo').upload(nombreUnico, archivoSeleccionado);
-    const { data: urlData } = clienteSupabase.storage.from('multimedia-tonazo').getPublicUrl(nombreUnico);
-    urlDelArchivo = urlData.publicUrl;
-  }
-
-  // Ahora sí, insertamos usando la variable definida
-  const { error } = await clienteSupabase.from('messages').insert([{ 
-    content: textoMensaje || null, 
-    user_id: usuarioId, 
-    file_url: urlDelArchivo, 
-    file_type: tipoDeArchivo, // <--- Ahora existe
-    status: 'pendiente' 
-  }]);
+      // 4. Inserción a la base de datos (Compatible con tu estructura)
+      const { error } = await clienteSupabase.from('messages').insert([{ 
+        content: textoMensaje || null, 
+        user_id: usuarioId, 
+        file_url: urlDelArchivo,
+        status: 'pendiente' 
+      }]);
 
       if (error) throw error;
 
@@ -213,16 +208,11 @@ clienteSupabase
       // 1. Añadir a la lista visual izquierda si existe
       let nuevaFila = null;
       if (listaMensajes) {
-    nuevaFila = document.createElement('li');
-    nuevaFila.className = 'item-playlist';
-    // Aquí el cambio para que sea más descriptivo en la lista:
-    let iconoTipo = tipoFinal === 'text' ? '📝' : (tipoFinal === 'image' ? '🖼️' : '🎬');
-    nuevaFila.innerHTML = `
-        <span class="item-username">${nombreDelEmisor}</span>
-        <span class="badge-tipo">${iconoTipo} ${tipoFinal.toUpperCase()}</span>
-    `;
-    listaMensajes.appendChild(nuevaFila);
-}
+        nuevaFila = document.createElement('li');
+        nuevaFila.className = 'item-playlist';
+        nuevaFila.innerHTML = `<span class="item-username">${nombreDelEmisor}</span><span class="badge-tipo">${tipoFinal.toUpperCase()}</span>`;
+        listaMensajes.appendChild(nuevaFila);
+      }
 
       // 2. Insertar a la cola de reproducción interna
       colaReproduccion.push({

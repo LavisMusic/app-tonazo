@@ -109,69 +109,63 @@ window.addEventListener('DOMContentLoaded', (event) => {
 // ==========================================
 // 7. EVENTOS: ENVIAR
 // ==========================================
+// ==========================================
+// ENVÍO UNIVERSAL (PC Y MÓVIL)
+// ==========================================
 if (btnEnviar) {
   btnEnviar.addEventListener('click', async () => {
+    // 1. Captura de datos
+    const mensajeInput = document.getElementById('mensaje-input');
     let textoMensaje = mensajeInput ? mensajeInput.value.trim() : '';
-    // CAMBIO 1: Usar localStorage en lugar de sessionStorage
     const usuarioId = localStorage.getItem('userId'); 
 
-    // CAMBIO 2: Avisar si el usuario no está logueado
+    // 2. Validación flexible
     if (!usuarioId) {
-      alert("Error: Sesión no encontrada. Por favor recarga la página.");
+      alert("Por favor, inicia sesión primero.");
+      return;
+    }
+    
+    // Si no hay texto ni archivo, no hacemos nada
+    if (!textoMensaje && typeof archivoSeleccionado === 'undefined') {
       return;
     }
 
-    if (!textoMensaje && !archivoSeleccionado) {
-      return; // No hacer nada si no hay nada que enviar
-    }
-
-    btnEnviar.textContent = 'Subiendo...';
+    btnEnviar.textContent = 'Enviando...';
     btnEnviar.disabled = true;
 
-    let urlDelArchivo = null;
-    let tipoDeArchivo = 'text';
-
     try {
-      if (archivoSeleccionado) {
-        tipoDeArchivo = archivoSeleccionado.type.startsWith('video/') ? 'video' : 'image';
+      // 3. Subida de archivo (si existe)
+      let urlDelArchivo = null;
+      if (typeof archivoSeleccionado !== 'undefined' && archivoSeleccionado) {
         const nombreUnico = `${Date.now()}_${archivoSeleccionado.name}`;
-
-        const { error: uploadError } = await clienteSupabase.storage
-          .from('multimedia-tonazo')
-          .upload(nombreUnico, archivoSeleccionado);
-
-        if (uploadError) throw uploadError;
-
+        await clienteSupabase.storage.from('multimedia-tonazo').upload(nombreUnico, archivoSeleccionado);
         const { data: urlData } = clienteSupabase.storage.from('multimedia-tonazo').getPublicUrl(nombreUnico);
         urlDelArchivo = urlData.publicUrl;
       }
 
-      // CAMBIO 3: Añadimos un console.log para depurar en el móvil
-      console.log("Intentando insertar en Supabase...");
-
-      const { error: insertError } = await clienteSupabase.from('messages').insert([{ 
+      // 4. Inserción a la base de datos (Compatible con tu estructura)
+      const { error } = await clienteSupabase.from('messages').insert([{ 
         content: textoMensaje || null, 
         user_id: usuarioId, 
-        file_url: urlDelArchivo, 
-        file_type: tipoDeArchivo, 
+        file_url: urlDelArchivo,
         status: 'pendiente' 
       }]);
 
-      if (insertError) throw insertError;
+      if (error) throw error;
 
-      // Limpieza de interfaz
+      // 5. Limpieza visual (compatible con tu diseño)
       if (mensajeInput) mensajeInput.value = '';
-      archivoSeleccionado = null;
+      if (typeof archivoSeleccionado !== 'undefined') archivoSeleccionado = null;
       
-      alert("¡Enviado con éxito!"); // Feedback para el móvil
-
+      console.log("Mensaje enviado exitosamente");
     } catch (err) {
-      console.error("Error completo:", err);
-      alert("Fallo al enviar: " + err.message);
+      console.error("Error al enviar:", err);
+      alert("No se pudo enviar el mensaje.");
     } finally {
       btnEnviar.textContent = 'Enviar a la cola';
       btnEnviar.disabled = false;
     }
+  
     
     if (btnAdjuntar) {
       btnAdjuntar.textContent = '📎 Adjuntar';

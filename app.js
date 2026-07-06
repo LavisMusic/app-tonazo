@@ -57,55 +57,58 @@ document.body.appendChild(selectorArchivos);
 // ==========================================
 // 5. EVENTOS: REGISTRO
 // ==========================================
+const adminPasswordInput = document.getElementById('admin-password-input');
+const errorPassword = document.getElementById('error-password');
+
+// Pon tu clave secreta aquí entre las comillas
+const CLAVE_MAESTRA = "asd"; 
+
 if (btnIngresar) {
   btnIngresar.addEventListener('click', async () => {
     
-    // --- ESCUDO: Solo interactuamos con la contraseña si el input existe ---
+    // DETECCIÓN: ¿Estamos en pantalla de proyección?
+    const esProyeccion = document.getElementById('modo-proyeccion') !== null;
+    
+    // Solo validamos contraseña si NO es proyección
     const adminPasswordInput = document.getElementById('admin-password-input');
-    const errorPassword = document.getElementById('error-password');
-    const CLAVE_MAESTRA = "asd";
-
-    if (adminPasswordInput) {
-      if (adminPasswordInput.value !== CLAVE_MAESTRA) {
-        if (errorPassword) errorPassword.style.display = 'block';
-        adminPasswordInput.value = '';
-        setTimeout(() => { if (errorPassword) errorPassword.style.display = 'none'; }, 2000);
+    if (!esProyeccion && adminPasswordInput) {
+      if (adminPasswordInput.value !== "asd") { // Tu clave
+        alert("Clave incorrecta");
         return;
       }
     }
 
-    // --- ESCUDO: Identificamos el nombre de usuario de forma segura ---
+    // Registro automático si es proyección
     const usernameInput = document.getElementById('username-input');
-    let nombreUsuario = usernameInput ? usernameInput.value.trim() : 'PROYECCIÓN';
-    
+    let nombreUsuario = esProyeccion ? 'PROYECCIÓN' : (usernameInput ? usernameInput.value.trim() : '');
+
     if (nombreUsuario) {
       if (!nombreUsuario.startsWith('@')) nombreUsuario = '@' + nombreUsuario;
-      
-      // Solo intentamos cambiar el texto si el botón existe
-      if (btnIngresar) btnIngresar.textContent = 'Ingresando...';
+      btnIngresar.textContent = 'Ingresando...';
 
       const { data, error } = await clienteSupabase.from('users').insert([{ username: nombreUsuario }]).select();
 
       if (error) {
         console.error('Error al registrar usuario:', error);
         alert('Error de conexión con la base de datos.');
-        if (btnIngresar) btnIngresar.textContent = 'Ingresar al evento';
+        btnIngresar.textContent = 'Ingresar al evento';
       } else {
         sessionStorage.setItem('userId', data[0].id);
         sessionStorage.setItem('username', data[0].username);
         
-        // --- ESCUDO: Ocultar pantallas solo si existen en el HTML actual ---
-        const registroPantalla = document.getElementById('registro-pantalla');
-        const pantallaPrincipal = document.getElementById('pantalla-principal');
-        
-        if (registroPantalla) registroPantalla.style.display = 'none';
-        if (pantallaPrincipal) pantallaPrincipal.style.display = 'flex';
+        if (document.getElementById('registro-pantalla')) {
+          document.getElementById('registro-pantalla').style.display = 'none';
+        }
+        if (document.getElementById('pantalla-principal')) {
+          document.getElementById('pantalla-principal').style.display = 'flex';
+        }
       }
     } else {
       alert('Por favor, ingresa un nombre de usuario.');
     }
   });
 }
+
 // ==========================================
 // 6. EVENTOS: ADJUNTAR
 // ==========================================

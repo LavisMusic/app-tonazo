@@ -114,20 +114,14 @@ window.addEventListener('DOMContentLoaded', (event) => {
 // ==========================================
 if (btnEnviar) {
   btnEnviar.addEventListener('click', async () => {
-    // 1. Captura de datos
     const mensajeInput = document.getElementById('mensaje-input');
-    let textoMensaje = mensajeInput ? mensajeInput.value.trim() : '';
+    const textoMensaje = mensajeInput ? mensajeInput.value.trim() : '';
     const usuarioId = localStorage.getItem('userId'); 
 
-    // 2. Validación flexible
-    if (!usuarioId) {
-      alert("Por favor, inicia sesión primero.");
-      return;
-    }
-    
-    // Si no hay texto ni archivo, no hacemos nada
-    if (!textoMensaje && typeof archivoSeleccionado === 'undefined') {
-      return;
+    // --- SOLUCIÓN: Validar que haya ALGO que enviar ---
+    if (!textoMensaje && !archivoSeleccionado) {
+        alert("¡Escribe algo o adjunta un archivo!");
+        return; 
     }
 
     btnEnviar.textContent = 'Enviando...';
@@ -145,11 +139,12 @@ if (btnEnviar) {
 
       // 4. Inserción a la base de datos (Compatible con tu estructura)
       const { error } = await clienteSupabase.from('messages').insert([{ 
-        content: textoMensaje || null, 
-        user_id: usuarioId, 
-        file_url: urlDelArchivo,
-        status: 'pendiente' 
-      }]);
+      content: textoMensaje || null, 
+      user_id: usuarioId, 
+      file_url: urlDelArchivo, 
+      file_type: tipoDeArchivo,
+      status: 'pendiente' 
+    }]);
 
       if (error) throw error;
 
@@ -313,4 +308,21 @@ function reproducirSiguiente() {
   }, TIEMPO_REPRODUCCION_MS);
 }
 
+function agregarMensajeALista(mensaje) {
+    const lista = document.getElementById('lista-mensajes');
+    const li = document.createElement('li');
 
+    // --- SOLUCIÓN: Si tiene archivo, lo muestra, si no, solo el texto ---
+    let contenidoVisual = `<strong>${mensaje.user_id}:</strong> ${mensaje.content || ''}`;
+    
+    if (mensaje.file_url) {
+        if (mensaje.file_type === 'image') {
+            contenidoVisual += `<br><img src="${mensaje.file_url}" style="max-width: 200px;">`;
+        } else if (mensaje.file_type === 'video') {
+            contenidoVisual += `<br><video src="${mensaje.file_url}" controls style="max-width: 200px;"></video>`;
+        }
+    }
+
+    li.innerHTML = contenidoVisual;
+    lista.appendChild(li);
+}

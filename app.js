@@ -128,23 +128,27 @@ if (btnEnviar) {
     btnEnviar.disabled = true;
 
     try {
-      // 3. Subida de archivo (si existe)
-      let urlDelArchivo = null;
-      if (typeof archivoSeleccionado !== 'undefined' && archivoSeleccionado) {
-        const nombreUnico = `${Date.now()}_${archivoSeleccionado.name}`;
-        await clienteSupabase.storage.from('multimedia-tonazo').upload(nombreUnico, archivoSeleccionado);
-        const { data: urlData } = clienteSupabase.storage.from('multimedia-tonazo').getPublicUrl(nombreUnico);
-        urlDelArchivo = urlData.publicUrl;
-      }
+  let urlDelArchivo = null;
+  let tipoDeArchivo = 'text'; // <--- ESTO FALTABA
 
-      // 4. Inserción a la base de datos (Compatible con tu estructura)
-      const { error } = await clienteSupabase.from('messages').insert([{ 
-      content: textoMensaje || null, 
-      user_id: usuarioId, 
-      file_url: urlDelArchivo, 
-      file_type: tipoDeArchivo,
-      status: 'pendiente' 
-    }]);
+  if (typeof archivoSeleccionado !== 'undefined' && archivoSeleccionado) {
+    // Definimos el tipo aquí antes de subir
+    tipoDeArchivo = archivoSeleccionado.type.startsWith('video/') ? 'video' : 'image';
+    
+    const nombreUnico = `${Date.now()}_${archivoSeleccionado.name}`;
+    await clienteSupabase.storage.from('multimedia-tonazo').upload(nombreUnico, archivoSeleccionado);
+    const { data: urlData } = clienteSupabase.storage.from('multimedia-tonazo').getPublicUrl(nombreUnico);
+    urlDelArchivo = urlData.publicUrl;
+  }
+
+  // Ahora sí, insertamos usando la variable definida
+  const { error } = await clienteSupabase.from('messages').insert([{ 
+    content: textoMensaje || null, 
+    user_id: usuarioId, 
+    file_url: urlDelArchivo, 
+    file_type: tipoDeArchivo, // <--- Ahora existe
+    status: 'pendiente' 
+  }]);
 
       if (error) throw error;
 
@@ -209,11 +213,16 @@ clienteSupabase
       // 1. Añadir a la lista visual izquierda si existe
       let nuevaFila = null;
       if (listaMensajes) {
-        nuevaFila = document.createElement('li');
-        nuevaFila.className = 'item-playlist';
-        nuevaFila.innerHTML = `<span class="item-username">${nombreDelEmisor}</span><span class="badge-tipo">${tipoFinal.toUpperCase()}</span>`;
-        listaMensajes.appendChild(nuevaFila);
-      }
+    nuevaFila = document.createElement('li');
+    nuevaFila.className = 'item-playlist';
+    // Aquí el cambio para que sea más descriptivo en la lista:
+    let iconoTipo = tipoFinal === 'text' ? '📝' : (tipoFinal === 'image' ? '🖼️' : '🎬');
+    nuevaFila.innerHTML = `
+        <span class="item-username">${nombreDelEmisor}</span>
+        <span class="badge-tipo">${iconoTipo} ${tipoFinal.toUpperCase()}</span>
+    `;
+    listaMensajes.appendChild(nuevaFila);
+}
 
       // 2. Insertar a la cola de reproducción interna
       colaReproduccion.push({
@@ -308,21 +317,4 @@ function reproducirSiguiente() {
   }, TIEMPO_REPRODUCCION_MS);
 }
 
-function agregarMensajeALista(mensaje) {
-    const lista = document.getElementById('lista-mensajes');
-    const li = document.createElement('li');
 
-    // --- SOLUCIÓN: Si tiene archivo, lo muestra, si no, solo el texto ---
-    let contenidoVisual = `<strong>${mensaje.user_id}:</strong> ${mensaje.content || ''}`;
-    
-    if (mensaje.file_url) {
-        if (mensaje.file_type === 'image') {
-            contenidoVisual += `<br><img src="${mensaje.file_url}" style="max-width: 200px;">`;
-        } else if (mensaje.file_type === 'video') {
-            contenidoVisual += `<br><video src="${mensaje.file_url}" controls style="max-width: 200px;"></video>`;
-        }
-    }
-
-    li.innerHTML = contenidoVisual;
-    lista.appendChild(li);
-}

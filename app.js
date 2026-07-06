@@ -87,23 +87,23 @@ if (btnIngresar) {
 // ==========================================
 // 6. EVENTOS: ADJUNTAR
 // ==========================================
-window.addEventListener('DOMContentLoaded', (event) => {
-    const btnAdjuntar = document.getElementById('btn-adjuntar');
-    const selectorArchivos = document.querySelector('input[type="file"]');
+const btnAdjuntar = document.getElementById('btn-adjuntar');
+const selectorArchivos = document.querySelector('input[type="file"]');
 
-    if (btnAdjuntar) {
-        btnAdjuntar.addEventListener('click', () => {
-            if (selectorArchivos) selectorArchivos.click();
-        });
-    }
+if (btnAdjuntar) {
+    btnAdjuntar.addEventListener('click', () => {
+        selectorArchivos.click();
+    });
+}
 
-    if (selectorArchivos) {
-        selectorArchivos.addEventListener('change', () => {
-            if (selectorArchivos.files.length > 0 && btnAdjuntar) {
-                btnAdjuntar.classList.add('btn-cargado');
-                btnAdjuntar.textContent = '✅ CARGADO';
-            }
-        });
+selectorArchivos.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        // AQUÍ ESTÁ LA CLAVE: Guardamos el archivo en la variable global
+        archivoSeleccionado = e.target.files[0]; 
+        
+        btnAdjuntar.classList.add('btn-cargado');
+        btnAdjuntar.textContent = '✅ CARGADO';
+        console.log("Archivo guardado en memoria:", archivoSeleccionado.name);
     }
 });
 // ==========================================
@@ -114,15 +114,14 @@ window.addEventListener('DOMContentLoaded', (event) => {
 // ==========================================
 if (btnEnviar) {
   btnEnviar.addEventListener('click', async () => {
-    const mensajeInput = document.getElementById('mensaje-input');
-    const textoMensaje = mensajeInput ? mensajeInput.value.trim() : '';
-    const usuarioId = localStorage.getItem('userId'); 
+const mensajeInput = document.getElementById('mensaje-input');
+const textoMensaje = mensajeInput ? mensajeInput.value.trim() : '';
 
     // --- SOLUCIÓN: Validar que haya ALGO que enviar ---
-    if (!textoMensaje && !archivoSeleccionado) {
-        alert("¡Escribe algo o adjunta un archivo!");
-        return; 
-    }
+    if (!textoMensaje && archivoSeleccionado === null) {
+    alert("¡Escribe algo o adjunta un archivo!");
+    return; 
+}
 
     btnEnviar.textContent = 'Enviando...';
     btnEnviar.disabled = true;

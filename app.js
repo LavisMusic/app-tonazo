@@ -101,7 +101,7 @@ if (btnAdjuntar && selectorArchivos) {
         if (e.target.files.length > 0) {
             archivoSeleccionado = e.target.files[0]; // AQUÍ SE GUARDA EL ARCHIVO
             btnAdjuntar.classList.add('btn-cargado');
-            btnAdjuntar.textContent = '✅ ' + archivoSeleccionado.name.substring(0, 10) + '...';
+            btnAdjuntar.textContent = '✅ CARGADO';
             console.log("Archivo capturado:", archivoSeleccionado);
         }
     });

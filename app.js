@@ -112,43 +112,66 @@ window.addEventListener('DOMContentLoaded', (event) => {
 if (btnEnviar) {
   btnEnviar.addEventListener('click', async () => {
     let textoMensaje = mensajeInput ? mensajeInput.value.trim() : '';
-    const usuarioId = sessionStorage.getItem('userId'); 
+    // CAMBIO 1: Usar localStorage en lugar de sessionStorage
+    const usuarioId = localStorage.getItem('userId'); 
 
-    if (!usuarioId || (!textoMensaje && !archivoSeleccionado)) {
+    // CAMBIO 2: Avisar si el usuario no está logueado
+    if (!usuarioId) {
+      alert("Error: Sesión no encontrada. Por favor recarga la página.");
       return;
     }
 
-    textoMensaje = filtrarTexto(textoMensaje);
+    if (!textoMensaje && !archivoSeleccionado) {
+      return; // No hacer nada si no hay nada que enviar
+    }
+
     btnEnviar.textContent = 'Subiendo...';
     btnEnviar.disabled = true;
 
     let urlDelArchivo = null;
     let tipoDeArchivo = 'text';
 
-    if (archivoSeleccionado) {
-      tipoDeArchivo = archivoSeleccionado.type.startsWith('video/') ? 'video' : 'image';
-      const nombreUnico = `${Date.now()}_${archivoSeleccionado.name}`;
+    try {
+      if (archivoSeleccionado) {
+        tipoDeArchivo = archivoSeleccionado.type.startsWith('video/') ? 'video' : 'image';
+        const nombreUnico = `${Date.now()}_${archivoSeleccionado.name}`;
 
-      const { error: uploadError } = await clienteSupabase.storage
-        .from('multimedia-tonazo')
-        .upload(nombreUnico, archivoSeleccionado);
+        const { error: uploadError } = await clienteSupabase.storage
+          .from('multimedia-tonazo')
+          .upload(nombreUnico, archivoSeleccionado);
 
-      if (!uploadError) {
+        if (uploadError) throw uploadError;
+
         const { data: urlData } = clienteSupabase.storage.from('multimedia-tonazo').getPublicUrl(nombreUnico);
         urlDelArchivo = urlData.publicUrl;
       }
+
+      // CAMBIO 3: Añadimos un console.log para depurar en el móvil
+      console.log("Intentando insertar en Supabase...");
+
+      const { error: insertError } = await clienteSupabase.from('messages').insert([{ 
+        content: textoMensaje || null, 
+        user_id: usuarioId, 
+        file_url: urlDelArchivo, 
+        file_type: tipoDeArchivo, 
+        status: 'pendiente' 
+      }]);
+
+      if (insertError) throw insertError;
+
+      // Limpieza de interfaz
+      if (mensajeInput) mensajeInput.value = '';
+      archivoSeleccionado = null;
+      
+      alert("¡Enviado con éxito!"); // Feedback para el móvil
+
+    } catch (err) {
+      console.error("Error completo:", err);
+      alert("Fallo al enviar: " + err.message);
+    } finally {
+      btnEnviar.textContent = 'Enviar a la cola';
+      btnEnviar.disabled = false;
     }
-
-    await clienteSupabase.from('messages').insert([{ 
-      content: textoMensaje || null, 
-      user_id: usuarioId, 
-      file_url: urlDelArchivo, 
-      file_type: tipoDeArchivo, 
-      status: 'pendiente' 
-    }]);
-
-    if (mensajeInput) mensajeInput.value = '';
-    archivoSeleccionado = null;
     
     if (btnAdjuntar) {
       btnAdjuntar.textContent = '📎 Adjuntar';
@@ -315,6 +338,3 @@ if (btnOmitir) {
     }
   });
 }
-window.onerror = function(message, source, lineno, colno, error) {
-   alert("Error en el móvil: " + message);
-};

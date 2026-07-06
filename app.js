@@ -60,7 +60,7 @@ document.body.appendChild(selectorArchivos);
 if (btnIngresar) {
   btnIngresar.addEventListener('click', async () => {
     
-    // 1. Escudo para la contraseña (solo si existe)
+    // --- ESCUDO: Solo interactuamos con la contraseña si el input existe ---
     const adminPasswordInput = document.getElementById('admin-password-input');
     const errorPassword = document.getElementById('error-password');
     const CLAVE_MAESTRA = "asd";
@@ -74,31 +74,32 @@ if (btnIngresar) {
       }
     }
 
-    // 2. Registro de usuario (ahora más seguro)
+    // --- ESCUDO: Identificamos el nombre de usuario de forma segura ---
     const usernameInput = document.getElementById('username-input');
     let nombreUsuario = usernameInput ? usernameInput.value.trim() : 'PROYECCIÓN';
     
     if (nombreUsuario) {
       if (!nombreUsuario.startsWith('@')) nombreUsuario = '@' + nombreUsuario;
-      btnIngresar.textContent = 'Ingresando...';
+      
+      // Solo intentamos cambiar el texto si el botón existe
+      if (btnIngresar) btnIngresar.textContent = 'Ingresando...';
 
       const { data, error } = await clienteSupabase.from('users').insert([{ username: nombreUsuario }]).select();
 
       if (error) {
         console.error('Error al registrar usuario:', error);
-        alert('Error de conexión.');
-        btnIngresar.textContent = 'Ingresar al evento';
+        alert('Error de conexión con la base de datos.');
+        if (btnIngresar) btnIngresar.textContent = 'Ingresar al evento';
       } else {
         sessionStorage.setItem('userId', data[0].id);
         sessionStorage.setItem('username', data[0].username);
         
-        // Ocultar/Mostrar pantallas con seguridad (si existen)
-        const registro = document.getElementById('registro-pantalla');
-        const principal = document.getElementById('pantalla-principal');
-        if (registro) registro.style.display = 'none';
-        if (principal) principal.style.display = 'flex';
+        // --- ESCUDO: Ocultar pantallas solo si existen en el HTML actual ---
+        const registroPantalla = document.getElementById('registro-pantalla');
+        const pantallaPrincipal = document.getElementById('pantalla-principal');
         
-        console.log("¡Ingreso exitoso!");
+        if (registroPantalla) registroPantalla.style.display = 'none';
+        if (pantallaPrincipal) pantallaPrincipal.style.display = 'flex';
       }
     } else {
       alert('Por favor, ingresa un nombre de usuario.');

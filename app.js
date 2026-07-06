@@ -57,54 +57,45 @@ document.body.appendChild(selectorArchivos);
 // ==========================================
 // 5. EVENTOS: REGISTRO
 // ==========================================
-const adminPasswordInput = document.getElementById('admin-password-input');
-const errorPassword = document.getElementById('error-password');
-
-// Pon tu clave secreta aquí entre las comillas
-const CLAVE_MAESTRA = "asd"; 
-
 if (btnIngresar) {
   btnIngresar.addEventListener('click', async () => {
     
-    // DETECCIÓN: ¿Estamos en pantalla de proyección?
-    const esProyeccion = document.getElementById('modo-proyeccion') !== null;
-    
-    // Solo validamos contraseña si NO es proyección
+    // 1. Validamos contraseña SOLO SI el input existe en el HTML
     const adminPasswordInput = document.getElementById('admin-password-input');
-    if (!esProyeccion && adminPasswordInput) {
-      if (adminPasswordInput.value !== "asd") { // Tu clave
-        alert("Clave incorrecta");
+    const errorPassword = document.getElementById('error-password');
+    const CLAVE_MAESTRA = "asd";
+
+    if (adminPasswordInput) { // Si esta página no tiene password, esto se salta
+      if (adminPasswordInput.value !== CLAVE_MAESTRA) {
+        if (errorPassword) errorPassword.style.display = 'block';
+        adminPasswordInput.value = '';
+        setTimeout(() => { if (errorPassword) errorPassword.style.display = 'none'; }, 2000);
         return;
       }
     }
 
-    // Registro automático si es proyección
+    // 2. Registro (Si es display, busca el input; si no existe, usa un nombre por defecto)
     const usernameInput = document.getElementById('username-input');
-    let nombreUsuario = esProyeccion ? 'PROYECCIÓN' : (usernameInput ? usernameInput.value.trim() : '');
+    let nombreUsuario = (usernameInput && usernameInput.value) ? usernameInput.value.trim() : 'PROYECCIÓN';
+    
+    console.log("Registrando usuario:", nombreUsuario);
 
-    if (nombreUsuario) {
-      if (!nombreUsuario.startsWith('@')) nombreUsuario = '@' + nombreUsuario;
-      btnIngresar.textContent = 'Ingresando...';
+    // 3. Ejecución en Supabase
+    btnIngresar.textContent = 'Ingresando...';
+    const { data, error } = await clienteSupabase.from('users').insert([{ username: nombreUsuario }]).select();
 
-      const { data, error } = await clienteSupabase.from('users').insert([{ username: nombreUsuario }]).select();
-
-      if (error) {
-        console.error('Error al registrar usuario:', error);
-        alert('Error de conexión con la base de datos.');
+    if (error) {
+        console.error("Error al registrar:", error);
+        alert("Error: " + error.message);
         btnIngresar.textContent = 'Ingresar al evento';
-      } else {
-        sessionStorage.setItem('userId', data[0].id);
-        sessionStorage.setItem('username', data[0].username);
-        
-        if (document.getElementById('registro-pantalla')) {
-          document.getElementById('registro-pantalla').style.display = 'none';
-        }
-        if (document.getElementById('pantalla-principal')) {
-          document.getElementById('pantalla-principal').style.display = 'flex';
-        }
-      }
     } else {
-      alert('Por favor, ingresa un nombre de usuario.');
+        // Guardamos y pasamos
+        sessionStorage.setItem('userId', data[0].id);
+        const registroPantalla = document.getElementById('registro-pantalla');
+        const pantallaPrincipal = document.getElementById('pantalla-principal');
+        
+        if (registroPantalla) registroPantalla.style.display = 'none';
+        if (pantallaPrincipal) pantallaPrincipal.style.display = 'flex';
     }
   });
 }

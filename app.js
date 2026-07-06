@@ -57,30 +57,26 @@ document.body.appendChild(selectorArchivos);
 // ==========================================
 // 5. EVENTOS: REGISTRO
 // ==========================================
-const adminPasswordInput = document.getElementById('admin-password-input');
-const errorPassword = document.getElementById('error-password');
-
-// Pon tu clave secreta aquí entre las comillas
-const CLAVE_MAESTRA = "asd"; 
-
 if (btnIngresar) {
   btnIngresar.addEventListener('click', async () => {
     
-    // --- ESTE ES EL ESCUDO ---
+    // 1. Escudo para la contraseña (solo si existe)
     const adminPasswordInput = document.getElementById('admin-password-input');
-    
-    // Solo validamos la contraseña SI el input existe en la página actual
+    const errorPassword = document.getElementById('error-password');
+    const CLAVE_MAESTRA = "asd";
+
     if (adminPasswordInput) {
       if (adminPasswordInput.value !== CLAVE_MAESTRA) {
-        errorPassword.style.display = 'block';
-        adminPasswordInput.value = ''; 
-        setTimeout(() => { errorPassword.style.display = 'none'; }, 2000);
-        return; // Detiene la ejecución aquí solo en el Admin
+        if (errorPassword) errorPassword.style.display = 'block';
+        adminPasswordInput.value = '';
+        setTimeout(() => { if (errorPassword) errorPassword.style.display = 'none'; }, 2000);
+        return;
       }
     }
 
-    // 2. Si la clave es correcta (o si es la pantalla de invitados que no tiene clave), seguimos
-    let nombreUsuario = usernameInput ? usernameInput.value.trim() : '';
+    // 2. Registro de usuario (ahora más seguro)
+    const usernameInput = document.getElementById('username-input');
+    let nombreUsuario = usernameInput ? usernameInput.value.trim() : 'PROYECCIÓN';
     
     if (nombreUsuario) {
       if (!nombreUsuario.startsWith('@')) nombreUsuario = '@' + nombreUsuario;
@@ -90,25 +86,25 @@ if (btnIngresar) {
 
       if (error) {
         console.error('Error al registrar usuario:', error);
-        alert('Error de conexión con la base de datos.');
+        alert('Error de conexión.');
         btnIngresar.textContent = 'Ingresar al evento';
       } else {
         sessionStorage.setItem('userId', data[0].id);
         sessionStorage.setItem('username', data[0].username);
         
-        if (document.getElementById('registro-pantalla')) {
-          document.getElementById('registro-pantalla').style.display = 'none';
-        }
-        if (document.getElementById('pantalla-principal')) {
-          document.getElementById('pantalla-principal').style.display = 'flex';
-        }
+        // Ocultar/Mostrar pantallas con seguridad (si existen)
+        const registro = document.getElementById('registro-pantalla');
+        const principal = document.getElementById('pantalla-principal');
+        if (registro) registro.style.display = 'none';
+        if (principal) principal.style.display = 'flex';
+        
+        console.log("¡Ingreso exitoso!");
       }
     } else {
       alert('Por favor, ingresa un nombre de usuario.');
     }
   });
 }
-
 // ==========================================
 // 6. EVENTOS: ADJUNTAR
 // ==========================================

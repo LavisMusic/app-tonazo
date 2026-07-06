@@ -114,8 +114,9 @@ selectorArchivos.addEventListener('change', (e) => {
 // ==========================================
 if (btnEnviar) {
   btnEnviar.addEventListener('click', async () => {
-const mensajeInput = document.getElementById('mensaje-input');
-const textoMensaje = mensajeInput ? mensajeInput.value.trim() : '';
+    const mensajeInput = document.getElementById('mensaje-input');
+    const textoMensaje = mensajeInput ? mensajeInput.value.trim() : '';
+    const usuarioId = localStorage.getItem('userId'); 
 
     // --- SOLUCIÓN: Validar que haya ALGO que enviar ---
     if (!textoMensaje && archivoSeleccionado === null) {

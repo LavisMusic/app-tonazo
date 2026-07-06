@@ -57,8 +57,6 @@ document.body.appendChild(selectorArchivos);
 // ==========================================
 // 5. EVENTOS: REGISTRO
 // ==========================================
-const btnIngresar = document.getElementById('btn-ingresar');
-
 if (btnIngresar) {
     btnIngresar.addEventListener('click', async () => {
         const usernameInput = document.getElementById('username-input');

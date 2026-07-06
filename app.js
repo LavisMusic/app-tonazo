@@ -89,23 +89,23 @@ if (btnIngresar) {
 // ==========================================
 window.addEventListener('DOMContentLoaded', (event) => {
     const btnAdjuntar = document.getElementById('btn-adjuntar');
-    const selectorArchivos = document.querySelector('input[type="file"]');
+// Usamos el input que creaste en la sección 4
+const selectorArchivos = document.querySelector('input[type="file"]'); 
 
-    if (btnAdjuntar) {
-        btnAdjuntar.addEventListener('click', () => {
-            if (selectorArchivos) selectorArchivos.click();
-        });
-    }
+if (btnAdjuntar && selectorArchivos) {
+    btnAdjuntar.addEventListener('click', () => {
+        selectorArchivos.click();
+    });
 
-    if (selectorArchivos) {
-        selectorArchivos.addEventListener('change', () => {
-            if (selectorArchivos.files.length > 0 && btnAdjuntar) {
-                btnAdjuntar.classList.add('btn-cargado');
-                btnAdjuntar.textContent = '✅ CARGADO';
-            }
-        });
-    }
-});
+    selectorArchivos.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            archivoSeleccionado = e.target.files[0]; // AQUÍ SE GUARDA EL ARCHIVO
+            btnAdjuntar.classList.add('btn-cargado');
+            btnAdjuntar.textContent = '✅ ' + archivoSeleccionado.name.substring(0, 10) + '...';
+            console.log("Archivo capturado:", archivoSeleccionado);
+        }
+    });
+}
 // ==========================================
 // 7. EVENTOS: ENVIAR
 // ==========================================
@@ -118,7 +118,9 @@ if (btnEnviar) {
     const textoMensaje = mensajeInput ? mensajeInput.value.trim() : '';
     const usuarioId = localStorage.getItem('userId'); 
 
-    // --- SOLUCIÓN: Validar que haya ALGO que enviar ---
+    // AQUÍ ESTÁ LA VALIDACIÓN: Usamos la variable global
+    console.log("Validando envío. Texto:", textoMensaje, "Archivo:", archivoSeleccionado);
+
     if (!textoMensaje && !archivoSeleccionado) {
         alert("¡Escribe algo o adjunta un archivo!");
         return; 
@@ -128,42 +130,42 @@ if (btnEnviar) {
     btnEnviar.disabled = true;
 
     try {
-  let urlDelArchivo = null;
-  let tipoDeArchivo = 'text'; // Valor por defecto
+      let urlDelArchivo = null;
+      let tipoDeArchivo = 'text';
 
-  if (archivoSeleccionado) {
-    // AQUÍ ESTÁ LA CLAVE: Detectar el tipo antes de subir
-    tipoDeArchivo = archivoSeleccionado.type.startsWith('video/') ? 'video' : 'image';
-    
-    const nombreUnico = `${Date.now()}_${archivoSeleccionado.name}`;
-    await clienteSupabase.storage.from('multimedia-tonazo').upload(nombreUnico, archivoSeleccionado);
-    const { data: urlData } = clienteSupabase.storage.from('multimedia-tonazo').getPublicUrl(nombreUnico);
-    urlDelArchivo = urlData.publicUrl;
-  }
+      if (archivoSeleccionado) {
+        tipoDeArchivo = archivoSeleccionado.type.startsWith('video/') ? 'video' : 'image';
+        const nombreUnico = `${Date.now()}_${archivoSeleccionado.name}`;
+        
+        await clienteSupabase.storage.from('multimedia-tonazo').upload(nombreUnico, archivoSeleccionado);
+        const { data: urlData } = clienteSupabase.storage.from('multimedia-tonazo').getPublicUrl(nombreUnico);
+        urlDelArchivo = urlData.publicUrl;
+      }
 
-  // Ahora insertamos incluyendo el tipoDeArchivo correctamente
-  const { error } = await clienteSupabase.from('messages').insert([{ 
-    content: textoMensaje || null, 
-    user_id: usuarioId, 
-    file_url: urlDelArchivo, 
-    file_type: tipoDeArchivo, // <--- Esto es lo que faltaba
-    status: 'pendiente' 
-  }]);
+      await clienteSupabase.from('messages').insert([{ 
+        content: textoMensaje || null, 
+        user_id: usuarioId, 
+        file_url: urlDelArchivo, 
+        file_type: tipoDeArchivo,
+        status: 'pendiente' 
+      }]);
 
-  if (error) throw error;
-      // 5. Limpieza visual (compatible con tu diseño)
-      if (mensajeInput) mensajeInput.value = '';
-      if (typeof archivoSeleccionado !== 'undefined') archivoSeleccionado = null;
+      // Limpieza
+      mensajeInput.value = '';
+      archivoSeleccionado = null; // Resetear la variable tras el éxito
+      btnAdjuntar.textContent = '📎 Adjuntar';
+      btnAdjuntar.classList.remove('btn-cargado');
       
-      console.log("Mensaje enviado exitosamente");
+      console.log("Mensaje enviado");
     } catch (err) {
-      console.error("Error al enviar:", err);
-      alert("No se pudo enviar el mensaje.");
+      console.error(err);
+      alert("Error al enviar: " + err.message);
     } finally {
       btnEnviar.textContent = 'Enviar a la cola';
       btnEnviar.disabled = false;
     }
-  
+  });
+}
     
     if (btnAdjuntar) {
       btnAdjuntar.textContent = '📎 Adjuntar';
@@ -174,7 +176,6 @@ if (btnEnviar) {
     btnEnviar.textContent = 'Enviar a la cola';
     btnEnviar.disabled = false;
   });
-}
 
 // ==========================================
 // 8. ESCUCHADOR EN TIEMPO REAL

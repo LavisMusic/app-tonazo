@@ -57,61 +57,49 @@ document.body.appendChild(selectorArchivos);
 // ==========================================
 // 5. EVENTOS: REGISTRO
 // ==========================================
-const adminPasswordInput = document.getElementById('admin-password-input');
-const errorPassword = document.getElementById('error-password');
-
-// Pon tu clave secreta aquí entre las comillas
-const CLAVE_MAESTRA = "asd"; 
-
+// ==========================================
+// REGISTRO UNIFICADO Y ANÓNIMO (Sin contraseñas)
+// ==========================================
 if (btnIngresar) {
   btnIngresar.addEventListener('click', async () => {
     
-    // 1. Verificación de seguridad (Si estamos en el panel de admin)
-    if (adminPasswordInput) {
-      if (adminPasswordInput.value !== CLAVE_MAESTRA) {
-        // Clave incorrecta: mostramos error y detenemos el ingreso
-        errorPassword.style.display = 'block';
-        adminPasswordInput.value = ''; // Limpiamos la caja
-        
-        // Ocultar el mensaje rojo después de 2 segundos
-        setTimeout(() => {
-          errorPassword.style.display = 'none';
-        }, 2000);
-        
-        return; // Esta línea es la que bloquea el paso
-      }
-    }
-
-    // 2. Si la clave es correcta (o si es la pantalla de invitados que no tiene clave), seguimos
-    let nombreUsuario = usernameInput ? usernameInput.value.trim() : '';
+    // 1. Obtenemos el nombre. Si no escriben nada, les asignamos un nombre automático.
+    const usernameInput = document.getElementById('username-input');
+    let nombreUsuario = (usernameInput && usernameInput.value) ? usernameInput.value.trim() : 'Invitado_' + Math.floor(Math.random() * 1000);
     
-    if (nombreUsuario) {
-      if (!nombreUsuario.startsWith('@')) nombreUsuario = '@' + nombreUsuario;
-      btnIngresar.textContent = 'Ingresando...';
+    // Formateo visual
+    if (!nombreUsuario.startsWith('@')) nombreUsuario = '@' + nombreUsuario;
+    
+    btnIngresar.textContent = 'Ingresando...';
 
-      const { data, error } = await clienteSupabase.from('users').insert([{ username: nombreUsuario }]).select();
+    // 2. Registro directo en Supabase
+    try {
+      const { data, error } = await clienteSupabase
+        .from('users')
+        .insert([{ username: nombreUsuario }])
+        .select();
 
       if (error) {
-        console.error('Error al registrar usuario:', error);
-        alert('Error de conexión con la base de datos.');
-        btnIngresar.textContent = 'Ingresar al evento';
+        console.error('Error al registrar:', error);
+        alert('Error al conectar con la base de datos.');
+        btnIngresar.textContent = 'ENTRAR A TONAZO';
       } else {
-        sessionStorage.setItem('userId', data[0].id);
-        sessionStorage.setItem('username', data[0].username);
+        // 3. Guardamos sesión y mostramos el dashboard
+        localStorage.setItem('userId', data[0].id); // Usamos localStorage para que no se pierda
+        localStorage.setItem('username', data[0].username);
         
-        if (document.getElementById('registro-pantalla')) {
-          document.getElementById('registro-pantalla').style.display = 'none';
-        }
-        if (document.getElementById('pantalla-principal')) {
-          document.getElementById('pantalla-principal').style.display = 'flex';
-        }
+        const registroPantalla = document.getElementById('registro-pantalla');
+        const pantallaPrincipal = document.getElementById('pantalla-principal');
+        
+        if (registroPantalla) registroPantalla.style.display = 'none';
+        if (pantallaPrincipal) pantallaPrincipal.style.display = 'flex';
       }
-    } else {
-      alert('Por favor, ingresa un nombre de usuario.');
+    } catch (err) {
+      console.error('Error inesperado:', err);
+      btnIngresar.textContent = 'ENTRAR A TONAZO';
     }
   });
 }
-
 // ==========================================
 // 6. EVENTOS: ADJUNTAR
 // ==========================================

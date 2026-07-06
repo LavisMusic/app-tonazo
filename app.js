@@ -66,19 +66,16 @@ const CLAVE_MAESTRA = "asd";
 if (btnIngresar) {
   btnIngresar.addEventListener('click', async () => {
     
-    // 1. Verificación de seguridad (Si estamos en el panel de admin)
+    // --- ESTE ES EL ESCUDO ---
+    const adminPasswordInput = document.getElementById('admin-password-input');
+    
+    // Solo validamos la contraseña SI el input existe en la página actual
     if (adminPasswordInput) {
       if (adminPasswordInput.value !== CLAVE_MAESTRA) {
-        // Clave incorrecta: mostramos error y detenemos el ingreso
         errorPassword.style.display = 'block';
-        adminPasswordInput.value = ''; // Limpiamos la caja
-        
-        // Ocultar el mensaje rojo después de 2 segundos
-        setTimeout(() => {
-          errorPassword.style.display = 'none';
-        }, 2000);
-        
-        return; // Esta línea es la que bloquea el paso
+        adminPasswordInput.value = ''; 
+        setTimeout(() => { errorPassword.style.display = 'none'; }, 2000);
+        return; // Detiene la ejecución aquí solo en el Admin
       }
     }
 
